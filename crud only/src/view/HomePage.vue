@@ -33,8 +33,7 @@ const handleDetail = (id) => {
 
 const handleUpdate = (item) => {
     if (confirm(`Want to edit ${item.name}?`)){
-        store.updateData = item
-        router.push(`/edit`)
+        router.push(`/edit/${item.id}`)
     }
 }
 async function handleDelete(item) {

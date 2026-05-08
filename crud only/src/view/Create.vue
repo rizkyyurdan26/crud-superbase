@@ -6,7 +6,7 @@
       >< Back</router-link
     >
     <h1 class="text-xl font-semibold">
-      {{isEdit ? "Update Data" : "Create Data" }}
+      {{ isEdit ? "Update Data" : "Create Data" }}
     </h1>
     <!-- Form Input -->
     <form @submit.prevent="handleData" class="space-y-5">
@@ -63,7 +63,9 @@ const route = useRoute();
 const inputName = ref("");
 const inputQty = ref(null);
 const inputLocation = ref("");
+
 const isEdit = ref(false);
+const isSaved = ref(false);
 
 const handleData = async () => {
   const payload = {
@@ -78,10 +80,12 @@ const handleData = async () => {
 
   if (isEdit.value) {
     if (confirm("Is data completed?")) {
-      const idx = store.updateData.id;
+      const idx = route.params.id;
       await store.updateProduct(idx, payload);
+
       if (store.successUpdate) {
         alert("Data has been updated");
+        isSaved.value = true;
         router.push("/");
       }
     }
@@ -93,7 +97,6 @@ const handleData = async () => {
 
       await store.createProduct(payload);
       if (store.successCreate) {
-        // Clean data before route
         alert("Data has been created");
         router.push("/");
       }
@@ -105,13 +108,20 @@ const handleData = async () => {
   }
 };
 
-onMounted(() => {
-  const handleEditData = store.updateData;
-  if (handleEditData) {
-    isEdit.value = true
-    inputName.value = handleEditData.name;
-    inputQty.value = handleEditData.quantity;
-    inputLocation.value = handleEditData.location;
+onMounted(async () => {
+  const id = route.params.id;
+
+  if (id) {
+    isEdit.value = true;
+    if (store.mainData.length === 0) {
+      await store.getAll();
+    }
+    const handleEditData = store.mainData.find((item) => item.id == id);
+    if (handleEditData) {
+      inputName.value = handleEditData.name;
+      inputQty.value = handleEditData.quantity;
+      inputLocation.value = handleEditData.location;
+    }
   }
 });
 </script>

@@ -5,7 +5,6 @@ import { stocksService } from "../services/stocks.service";
 export const useMaindataStore = defineStore("maindata", () => {
   const mainData = ref([]);
   const detailData = ref(null);
-  const updateData = ref(null);
 
   const loadingGet = ref(false);
   const loadingGetId = ref(false);
@@ -90,7 +89,6 @@ export const useMaindataStore = defineStore("maindata", () => {
   }
 
   async function updateProduct(id, payload) {
-    updateData.value = null;
     loadingUpdate.value = true;
     errorUpdate.value = null;
     successUpdate.value = false
@@ -115,7 +113,6 @@ export const useMaindataStore = defineStore("maindata", () => {
 
   return {
     mainData,
-    updateData,
     loadingGet,
     loadingCreate,
     loadingUpdate,
