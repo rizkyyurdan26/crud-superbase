@@ -1,0 +1,23 @@
+import api from "./api";
+
+export const dataService = {
+  async getAll() {
+    const res = await api.get("/rest/v1/stocks?select=*");
+    return res.data;
+  },
+  
+  async create(payload) {
+    const res = await api.post("/rest/v1/stocks", payload);
+    return res.data;
+  },
+
+  async edit(id, payload) {
+    const res = await api.patch(`/rest/v1/stocks?id=eq.${id}`, payload);
+    return res.data;
+  },
+
+  async delete(id) {
+    const res = await api.delete(`/rest/v1/stocks?id=eq.${id}`);
+    return res.data;
+  },
+};

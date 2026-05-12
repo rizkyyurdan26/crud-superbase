@@ -7,10 +7,11 @@ const api = axios.create({
   baseURL: BASE_URL,
   headers: {
     apikey: ANON_KEY,
-    Authorization: `Beares ${ANON_KEY}`,
+    Authorization: `Bearer ${ANON_KEY}`,
     "Content-Type": "application/json",
     Prefer: "return=representation",
   },
 });
+
 
 export default api;

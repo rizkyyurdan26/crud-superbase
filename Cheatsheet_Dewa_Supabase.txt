@@ -1,0 +1,85 @@
+CHEATSHEET DEWA SUPABASE (No-Code & SQL Shortcut)
+=================================================
+
+1. Setup Tabel Master (Contoh: stocks)
+--------------------------------------
+Langkah membuat tabel utama untuk data aplikasi lo.
+
+• Langkah: Buka Table Editor > New Table.
+• Struktur Kolom:
+  - id: uuid (Default: gen_random_uuid()) — Primary Key.
+  - created_at: timestamptz (Default: now()).
+  - sku: text — Wajib centang Is Unique (biar kode barang gak kembar).
+  - productName: text.
+  - quantity: int4.
+  - location: text.
+• Penting: Centang Enable Row Level Security (RLS).
+
+2. Setup Tabel Relasi (Contoh: profiles)
+----------------------------------------
+Langkah menghubungkan data pengguna dengan sistem Auth Supabase.
+
+• Langkah: Buka Table Editor > New Table.
+• Struktur Kolom:
+  - id: uuid — Klik Ikon Rantai (Foreign Key) > Select Schema: auth > Table: users > Column: id.
+  - Action: Pilih Cascade (Biar data profil hapus otomatis kalau user dihapus).
+  - email: text.
+  - username: text.
+  - role: text (Default Value: 'user').
+• Penting: Centang Enable Row Level Security (RLS).
+
+3. Jembatan Otomatis (SQL Trigger)
+----------------------------------
+Supaya setiap ada orang daftar (Register), datanya otomatis ke-copy ke tabel profiles.
+
+• Langkah: Buka SQL Editor > New Query > Run kode di bawah ini:
+
+-- 1. Fungsi untuk copy data dari Auth ke Tabel Profiles
+create or replace function public.handle_new_user()
+returns trigger as $$
+begin
+  insert into public.profiles (id, email, username, role)
+  values (
+    new.id, 
+    new.email, 
+    new.raw_user_meta_data->>'username', -- Menangkap username dari Vue
+    'user'
+  );
+  return new;
+end;
+$$ language plpgsql security definer;
+
+-- 2. Trigger (Pemicu) saat ada user baru di tabel auth.users
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();
+
+4. Setup 'Satpam' (RLS Policies)
+--------------------------------
+Langkah mengatur siapa yang boleh akses API via Axios.
+
+A. Untuk Tabel stocks (Inventory)
+• SELECT: Role 'public', Expression: true (Semua bisa lihat).
+• INSERT: Role 'authenticated', Expression: auth.role() = 'authenticated'.
+• UPDATE: Role 'authenticated', Expression: auth.role() = 'authenticated' (Isi di Using & With Check).
+• DELETE: Role 'authenticated', Expression: auth.role() = 'authenticated'.
+
+B. Untuk Tabel profiles (User Data)
+• SELECT: Role 'public', Expression: true.
+• UPDATE: Role 'authenticated', Expression: auth.uid() = id (Hanya bisa edit profil sendiri).
+
+5. Cheat Sheet Endpoint Axios
+-----------------------------
+Gunakan Project URL dan Anon Key dari menu Settings > API.
+
+• Header Wajib:
+  - apikey: ANON_KEY
+  - Authorization: Bearer ANON_KEY (Ganti dengan Access Token jika sudah login)
+  - Prefer: return=representation (Biar dapat balikan data setelah POST/PATCH)
+
+• URL Pattern:
+  - GET All: {{URL}}/rest/v1/stocks?select=*
+  - POST: {{URL}}/rest/v1/stocks
+  - PATCH (Edit): {{URL}}/rest/v1/stocks?id=eq.UUID_BARANG
+  - DELETE: {{URL}}/rest/v1/stocks?id=eq.UUID_BARANG
+

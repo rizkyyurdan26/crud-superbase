@@ -1,7 +1,11 @@
-import { createRouter, createWebHistory } from "vue-router";
-import HomePage from "../view/HomePage.vue";
-import ProductDetail from "../view/ProductDetail.vue";
-import Create from "../view/Create.vue";
+import {
+  createRouter,
+  createWebHashHistory,
+  createWebHistory,
+} from "vue-router";
+import CreatePage from "../views/CreatePage.vue";
+import HomePage from "../views/HomePage.vue";
+import ProductDetail from "../views/ProductDetail.vue";
 
 
 const routes = [
@@ -9,21 +13,25 @@ const routes = [
     path: "/",
     name: "home",
     component: HomePage,
+    
   },
   {
     path: "/product/:id",
     name: "product-detail",
     component: ProductDetail,
+    
   },
   {
     path: "/create",
     name: "create",
-    component: Create,
+    component: CreatePage,
+    
   },
   {
     path: "/edit/:id",
     name: "edit",
-    component: Create,
+    component: CreatePage,
+    
   },
 ];
 
@@ -31,5 +39,6 @@ const router = createRouter({
   history: createWebHistory(),
   routes,
 });
+
 
 export default router;
