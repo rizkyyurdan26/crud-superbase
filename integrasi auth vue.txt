@@ -1,0 +1,42 @@
+Step 1: Buat "Kurir" Auth (src/services/auth.service.js)
+Ini adalah lapisan paling bawah, tugasnya murni cuma nembak API.
+
+
+Register: Mengirim Email, Password, dan username ke /auth/v1/signup.
+
+
+Login: Mengirim kredensial ke /auth/v1/token?grant_type=password untuk mendapatkan token akses.
+
+
+Logout: Memberitahu Supabase bahwa sesi login sudah berakhir.
+
+Step 2: Buat "Gudang" Auth (src/stores/auth.store.js)
+Lapisan tengah ini (Pinia) bertugas mengelola status login aplikasi lo secara global.
+
+
+Simpan Token: Menyimpan access_token ke dalam localStorage agar user tidak ter-logout saat refresh halaman.
+
+
+Simpan Data User: Menampung informasi user (seperti ID, Email, Role) di dalam state Pinia agar bisa dibaca oleh komponen Vue lain.
+
+
+Handle Logout: Menghapus token dari localStorage dan mereset state Pinia.
+
+Step 3: Konfigurasi "Kartu Akses" (src/services/api.js)
+Agar "satpam" (RLS) Supabase ngasih izin lo buat ngubah data.
+
+
+Axios Interceptor: Membuat kode otomatis yang mengambil token dari localStorage dan menyuntikkannya ke bagian Header Authorization: Bearer [TOKEN_LO] di setiap request.
+
+
+Tujuan: Mencegah error 403 (Forbidden) saat lo melakukan operasi CRUD (POST/PATCH/DELETE) ke tabel stocks.
+
+Step 4: Pasang "Satpam Halaman" (src/route/router.js)
+Mencegah tamu tak diundang masuk ke halaman gudang/admin.
+
+Navigation Guard: Memasang fungsi beforeEach di router. Jika halaman butuh otentikasi tapi token di localStorage kosong, user langsung ditendang kembali ke halaman /login.
+
+Step 5: Eksekusi di Tampilan (src/views/loginRegister/Login.vue)
+Ini adalah "muka" aplikasinya.
+
+Aksi UI: Membuat form input. Saat disubmit, halaman ini cukup memanggil fungsi login yang sudah disediakan oleh gudang auth.store.js.

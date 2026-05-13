@@ -4,114 +4,111 @@ import { authService } from "../services/auth.service";
 
 export const useAuthStore = defineStore("auth", () => {
   const user = ref(null);
-  const isAuth = ref(!!localStorage.getItem("access_token"));
-
-  const loading = ref({
-    Login: false,
-    Register: false,
-    Logout: false,
-    Check: false,
-  });
-
-  const error = ref({
-    Login: null,
-    Register: null,
-    Logout: null,
-    Check: null,
-  });
-
-  const successRegister = ref(false);
+  const loading = ref(false);
+  const error = ref(null);
+  const errorCode = ref(null);
+  const token = ref(localStorage.getItem("access_token") || null);
 
   const isAdmin = computed(() => {
     return user.value?.user_metadata?.role === "admin";
   });
 
-  async function handleLogin(email, password) {
-    loading.value.Login = true;
-    error.value.Login = null;
+  async function register(email, password, username) {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const data = await authService.register(email, password, username);
+      return data;
+    } catch (err) {
+      error.value =
+        err.response?.data?.msg ||
+        err.response?.data?.message ||
+        err.message ||
+        "Register Failed";
+      console.error("Register Failed Detail:", err.response?.data || err);
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function login(email, password) {
+    loading.value = true;
+    error.value = null;
 
     try {
       const data = await authService.login(email, password);
       user.value = data.user;
-      isAuth.value = true;
-
+      token.value = data.access_token;
       localStorage.setItem("access_token", data.access_token);
+
       return data;
     } catch (err) {
-      error.value.Login =
-        err.response?.data?.message || err.message || "Login Failed";
+      const supabaseError =
+        err.response?.data?.error_description ||
+        err.response?.data.msg ||
+        err.response?.data.message;
+
+      if (supabaseError === "Invalid login credentials") {
+        error.value = "Incorrect email or password";
+      } else {
+        error.value = supabaseError || "Login Failed";
+      }
+      console.error("Login Failed Detail:", err.response?.data || err);
+      throw err;
     } finally {
-      loading.value.Login = false;
+      loading.value = false;
     }
   }
 
-  async function handleRegister(email, password, username) {
-    loading.value.Register = true;
-    error.value.Register = null;
-    successRegister.value = false;
+  async function getUser() {
+    if (!token) return null;
+
+    loading.value = true;
+    error.value = false;
 
     try {
-      await authService.register(email, password, username);
-      successRegister.value = true;
-      return true;
+      const data = await authService.getUser();
+      user.value = data;
     } catch (err) {
-      error.value.Register =
-        err.response?.data?.message || err.message || "Register Failed";
+      console.error("Session is not valid", err);
+      error.value = "Session is not valid";
+
+      logout();
     } finally {
-      loading.value.Register = false;
+      loading.value = false;
     }
   }
 
-  async function handleLogout() {
-    loading.value.Logout = true;
-    error.value.Logout = null;
+  async function logout() {
+    loading.value = true;
+    error.value = null;
 
     try {
       await authService.logout();
-
-      user.value = null;
-      isAuth.value = false;
-      localStorage.removeItem("access_token");
     } catch (err) {
-      error.value.Logout =
-        err.response?.data?.message || err.message || "Logout Failed";
+      console.error("Logout Failed", err);
+      error.value = "Request timeout";
     } finally {
-      loading.value.Logout = false;
-    }
-  }
-
-  async function checkSession() {
-    loading.value.Check = true;
-    error.value.Check = null;
-
-    try {
-      const token = localStorage.getItem("access_token");
-      if (token) {
-        const userData = await authService.getUser();
-        user.value = userData;
-        isAuth.value = true;
-      }
-    } catch (err) {
-      error.value.Check =
-        err.response?.data?.message || err.message || "User Not Found";
+      token.value = null;
       user.value = null;
-      isAuth.value = false;
       localStorage.removeItem("access_token");
-    } finally {
-      loading.value.Check = false;
+      loading.value = false;
     }
   }
 
   return {
     user,
-    isAuth,
     loading,
     error,
-    successRegister,
+    errorCode,
+    token,
     isAdmin,
-    handleLogin,
-    handleRegister,
-    handleLogout,
-    checkSession,
+
+    register,
+    login,
+    logout,
+    getUser,
   };
 });
